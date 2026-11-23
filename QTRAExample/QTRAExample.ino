@@ -27,6 +27,7 @@
 // last seen by sensor 5 before being lost.
 
 
+
 /* ---------------------------------------------------------------------
    [A]  WIRING
    A record of where the wires go, not a set of choices.
@@ -116,7 +117,7 @@ int readDistanceCm() {
   delayMicroseconds(10);
   digitalWrite(TRIG_PIN, LOW);
 
-  int duration = pulseIn(ECHO_PIN, HIGH, ECHO_TIMEOUT_US);   // out and back, in microseconds
+  long duration = pulseIn(ECHO_PIN, HIGH, ECHO_TIMEOUT_US);   // out and back, in microseconds
   //Serial.print("duration - ");
   //Serial.println(duration);
   if (duration == 0) return NOTHING_SEEN;   // Week 4: no echo is not "a wall right here"
@@ -140,6 +141,8 @@ long lastPrint   = 0;
 
 
 
+#define KP 2 //experiment to determine this, start by something small that just makes your bot follow the line at a slow speed
+#define KD 5 //experiment to determine this, slowly increase the speeds and adjust this value. ( Note: Kp < Kd) 
 
 
 
@@ -173,7 +176,7 @@ void setup()
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, HIGH); // turn on Arduino's LED to indicate we are in calibration mode
   Serial.println("Starting calibration");
-  delay(500);
+  // delay(500);
   // analogRead() takes about 0.1 ms on an AVR.
   // 0.1 ms per sensor * 4 samples per sensor read (default) * 6 sensors
   // * 10 reads per calibrate() call = ~24 ms per calibrate() call.
@@ -204,6 +207,10 @@ void setup()
   delay(1000);
 }
 
+
+
+
+
 void loop()
 {
   readDistanceCm();
@@ -231,19 +238,25 @@ void loop()
     blocked = (cm < STOP_CM);
   }
 
-  Serial.print("Loop cm= ");
-  Serial.println(cm);
+  //Serial.print("Loop cm= ");
+  //Serial.println(cm);
 
-
-  drive(LEFT, 150); drive(RIGHT, 150);
-
-  bool rDrift = int(position) >= 2300; 
-  bool lDrift = int(position) <= 1000; 
-  
- if (!rDrift) { drive(LEFT, 0);      drive(RIGHT, 0);      }
-  else         { drive(LEFT, CRUISE*2); drive(RIGHT, CRUISE); }
-
- if (!lDrift) { drive(LEFT, 0);      drive(RIGHT, 0);      }
-  else         { drive(LEFT, CRUISE); drive(RIGHT, CRUISE*2); }
+  if (position <= 1500) {              // line to the LEFT: turn left
+   // drive(LEFT, 0);  drive(RIGHT, 0); 
+    Serial.println("left drift");
+    delay(100);
+    drive(LEFT, CRUISE );  drive(RIGHT, CRUISE / 2);
+    delay(1000);
+  }
+  else if (position >= 2350) {         // line to the RIGHT: turn right
+    //drive(LEFT, 0);  drive(RIGHT, 0);
+    Serial.println("right drift");
+    delay(100);
+    drive(LEFT, CRUISE / 2);      drive(RIGHT, CRUISE );
+    delay(1000);
+  }
+  else {                               // centered: straight
+    drive(LEFT, CRUISE);      drive(RIGHT, CRUISE);
+  }
   
 }
